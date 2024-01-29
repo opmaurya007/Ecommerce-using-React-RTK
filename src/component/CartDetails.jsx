@@ -3,6 +3,8 @@ import "./cartStyle.css";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart ,removeToCart,removeSingleIteam, emptyCartIteam} from "../redux/features/cartslice";
 import toast from "react-hot-toast";
+import {loadStripe} from '@stripe/stripe-js';
+
 
 const CartDetails = () => {
 
@@ -56,6 +58,31 @@ const countQuantity=()=>{
     countQuantity()
     },[countQuantity])
 
+    //payment integration
+    const makePayment=async()=>{
+        const stripe=await loadStripe("pk_test_51OdtNOSJGQzVMklLwTM8gKSg0S5aDA7DCCy50hGP7yPfkIEaVHP7eGBr4BgVvxMFkn7KquOntXMfl45ahseRVKFe00GX8Xjgr7");
+
+        const body={
+          products:carts
+        }
+        const headers={
+          "Content-Type":"application/json"
+        }
+        const response = await fetch("http://localhost:7000/api/create-checkout-session",{
+      
+          method:"POST",
+          headers:headers,
+          body:JSON.stringify(body)
+        });
+        const session=await response.json();
+
+        const result=stripe.redirectToCheckout({
+          sessionId:session.id
+        });
+        if(result.errror){
+          console.log(result.error)
+        }
+    }
 
   return (
     <div className="row justify-content-center m-0">
@@ -144,11 +171,13 @@ const countQuantity=()=>{
                 <tfoot>
                   <tr>
                     <th>&nbsp;</th>
-                    <th colSpan={3}>&nbsp;</th>
+                    <th colSpan={2}>&nbsp;</th>
                     <th>Items in Cart <span className="m1-2 mr-2">:</span>
                     <span className="text-danger">{totalQuantity}</span></th>
                     <th className="text-right">Total Price <span className="m1-2 mr-2">:</span>
                     <span className="text-danger">₹&nbsp;{totalPrice}</span></th>
+                    <th className="text-right"><button className="btn btn-success" type="button" onClick={makePayment}>Checkout</button></th>
+
                   </tr>
                 </tfoot>
               </table>
